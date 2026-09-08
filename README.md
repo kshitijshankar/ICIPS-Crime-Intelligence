@@ -90,7 +90,7 @@
 ### 1️⃣ Clone the Repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
+git clone <https://kshitijshankar.github.io/ICIPS-Crime-Intelligence/>
 cd ICIPS-Analytics
 ```
 
