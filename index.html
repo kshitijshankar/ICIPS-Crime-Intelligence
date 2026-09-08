@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indian Crime Intelligence & Public Safety Analytics</title>
+    <!-- Google Fonts: Outfit (modern UI) & Caveat (handwritten notes) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Dashboard Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- ApexCharts CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Cinematic Landing Page -->
+    <section id="landing-page" class="landing-section">
+        <div class="landing-background"></div>
+        <div class="landing-container">
+            <div class="landing-badge"><i class="fa-solid fa-shield-halved"></i> NATIONAL SECURITY & SAFETY DIVISION</div>
+            <h1 class="landing-title">INDIAN CRIME<br><span class="accent-text">INTELLIGENCE</span></h1>
+            <p class="landing-subtitle">Data-driven insights into crime patterns, public safety, victims, and police operations.</p>
+            <p class="landing-description">Explore reported crime patterns across Indian cities, crime categories, victim demographics, weapons, and case outcomes in a high-fidelity interactive environment.</p>
+            <button id="btn-go-next" class="btn-primary-3d">
+                <span>GO NEXT</span> <i class="fa-solid fa-arrow-right-long"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- Data Loading Overlay -->
+    <div id="loader-overlay" class="loader-overlay hidden">
+        <div class="loader-card">
+            <div class="spinner-ring"><div></div><div></div><div></div><div></div></div>
+            <h3 id="loader-title">Loading Crime Intelligence...</h3>
+            <p id="loader-status">Fetching dataset files...</p>
+            <div class="progress-container">
+                <div id="loader-progress-bar" class="progress-bar"></div>
+            </div>
+            <span id="loader-percentage">0%</span>
+        </div>
+    </div>
+
+    <!-- Error Screen Overlay -->
+    <div id="error-overlay" class="error-overlay hidden">
+        <div class="error-card">
+            <i class="fa-solid fa-triangle-exclamation error-icon"></i>
+            <h3>Crime Dataset Could Not Be Loaded</h3>
+            <p id="error-message">Please ensure crime_dataset.js or crime_dataset_india.json is located in the project directory.</p>
+            <button onclick="window.location.reload()" class="btn-error-retry">Retry</button>
+        </div>
+    </div>
+
+    <!-- Main Analytics Application Container -->
+    <div id="app-container" class="app-container hidden">
+        
+        <!-- Sticky Navigation Bar -->
+        <header class="app-header">
+            <div class="header-branding">
+                <i class="fa-solid fa-shield-halved brand-logo"></i>
+                <div class="brand-text">
+                    <h2>ICIPS ANALYTICS</h2>
+                    <span>INDIAN CRIME INTELLIGENCE & PUBLIC SAFETY</span>
+                </div>
+            </div>
+            <nav class="app-nav">
+                <button class="nav-btn active" data-tab="executive">
+                    <i class="fa-solid fa-chart-line"></i> <span>Executive</span>
+                </button>
+                <button class="nav-btn" data-tab="operations">
+                    <i class="fa-solid fa-shield-heart"></i> <span>Police Operations</span>
+                </button>
+                <button class="nav-btn" data-tab="intelligence">
+                    <i class="fa-solid fa-brain"></i> <span>Crime Intelligence</span>
+                </button>
+                <button class="nav-btn" data-tab="safety">
+                    <i class="fa-solid fa-person-dress"></i> <span>Women's Safety</span>
+                </button>
+                <button class="nav-btn" data-tab="cityrisk">
+                    <i class="fa-solid fa-map-location-dot"></i> <span>City Risk</span>
+                </button>
+            </nav>
+        </header>
+
+        <!-- Main Dashboard Wrapper -->
+        <main class="main-content">
+            
+            <!-- Tab 1: Executive Dashboard -->
+            <section id="tab-executive" class="dashboard-tab">
+                <div class="tab-header">
+                    <h1>INDIAN CRIME EXECUTIVE OVERVIEW</h1>
+                    <p class="tab-subtitle">An executive view of reported crime, case outcomes, and public safety patterns.</p>
+                </div>
+
+                <!-- Slicers Section -->
+                <div class="slicers-bar">
+                    <div class="slicer-group">
+                        <label for="exec-city"><i class="fa-solid fa-city"></i> City</label>
+                        <select id="exec-city" class="custom-select">
+                            <option value="ALL">All Cities</option>
+                        </select>
+                    </div>
+                    <div class="slicer-group">
+                        <label for="exec-domain"><i class="fa-solid fa-layer-group"></i> Crime Domain</label>
+                        <select id="exec-domain" class="custom-select">
+                            <option value="ALL">All Domains</option>
+                        </select>
+                    </div>
+                    <button class="btn-reset" onclick="resetDashboardFilters('executive')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                    </button>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" data-metric="total-crimes">
+                        <div class="kpi-icon"><i class="fa-solid fa-folder-open"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOTAL CRIMES REPORTED</span>
+                            <h2 class="kpi-value" id="exec-kpi-total-crimes">0</h2>
+                            <p class="kpi-tooltip">Total reported incidents in the selected filter context.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="closed-cases">
+                        <div class="kpi-icon"><i class="fa-solid fa-circle-check"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">CLOSED CASES</span>
+                            <h2 class="kpi-value" id="exec-kpi-closed-cases">0</h2>
+                            <p class="kpi-tooltip">Cases marked as Closed in the current selection.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="open-cases">
+                        <div class="kpi-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">OPEN CASES</span>
+                            <h2 class="kpi-value" id="exec-kpi-open-cases">0</h2>
+                            <p class="kpi-tooltip">Cases currently unresolved and under active inquiry.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="closure-rate">
+                        <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">CASE CLOSURE RATE</span>
+                            <h2 class="kpi-value" id="exec-kpi-closure-rate">0.0%</h2>
+                            <p class="kpi-tooltip">Percentage of total reported incidents that have been successfully resolved.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="violent-rate">
+                        <div class="kpi-icon"><i class="fa-solid fa-skull-crossbones"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">VIOLENT CRIME %</span>
+                            <h2 class="kpi-value" id="exec-kpi-violent-rate">0.0%</h2>
+                            <p class="kpi-tooltip">Proportion of reported crimes categorized in the Violent Crime domain.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="top-city">
+                        <div class="kpi-icon"><i class="fa-solid fa-building-flag"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOP CRIME CITY</span>
+                            <h2 class="kpi-value small-text" id="exec-kpi-top-city">N/A</h2>
+                            <p class="kpi-tooltip">The city reporting the highest volume of crimes within this filter context.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visuals Grid -->
+                <div class="visuals-grid">
+                    <div class="chart-container large-chart span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-area"></i> Reported Crime Trend Over Time</h3>
+                            <span class="chart-subtitle">Monthly aggregate of crime occurrences</span>
+                        </div>
+                        <div id="exec-chart-trend" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-bar"></i> Top Cities by Reported Crime</h3>
+                            <span class="chart-subtitle">Top 10 crime counts by city</span>
+                        </div>
+                        <div id="exec-chart-cities" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-pie"></i> Crime Domain Distribution</h3>
+                            <span class="chart-subtitle">Incidents grouped by tactical domain</span>
+                        </div>
+                        <div id="exec-chart-domains" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-bar"></i> Top Reported Crime Categories</h3>
+                            <span class="chart-subtitle">Top 10 crime code descriptions</span>
+                        </div>
+                        <div id="exec-chart-types" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-toggle-on"></i> Case Resolution Status</h3>
+                            <span class="chart-subtitle">Comparison of Open vs Closed cases</span>
+                        </div>
+                        <div id="exec-chart-status" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-venus-mars"></i> Victim Gender Demographics</h3>
+                            <span class="chart-subtitle">Breakdown of reported victim genders</span>
+                        </div>
+                        <div id="exec-chart-gender" class="chart-body"></div>
+                    </div>
+                </div>
+
+                <!-- Handwritten Dynamic Insights -->
+                <div class="insights-section">
+                    <h3 class="notebook-title"><i class="fa-solid fa-pen-fancy"></i> WHAT THE DATA IS TELLING US</h3>
+                    <div class="insights-container" id="exec-insights">
+                        <!-- Dynamic Insights will be injected here -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab 2: Police Operations Dashboard -->
+            <section id="tab-operations" class="dashboard-tab hidden">
+                <div class="tab-header">
+                    <h1>CRIME & POLICE OPERATIONS</h1>
+                    <p class="tab-subtitle">Monitoring crime workload, police deployment, and case resolution.</p>
+                </div>
+
+                <!-- Slicers -->
+                <div class="slicers-bar">
+                    <div class="slicer-group">
+                        <label for="ops-city"><i class="fa-solid fa-city"></i> City</label>
+                        <select id="ops-city" class="custom-select">
+                            <option value="ALL">All Cities</option>
+                        </select>
+                    </div>
+                    <div class="slicer-group">
+                        <label for="ops-crime"><i class="fa-solid fa-handcuffs"></i> Crime Type</label>
+                        <select id="ops-crime" class="custom-select">
+                            <option value="ALL">All Crime Types</option>
+                        </select>
+                    </div>
+                    <button class="btn-reset" onclick="resetDashboardFilters('operations')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                    </button>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" data-metric="total-crimes">
+                        <div class="kpi-icon"><i class="fa-solid fa-shield"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOTAL CASES</span>
+                            <h2 class="kpi-value" id="ops-kpi-total">0</h2>
+                            <p class="kpi-tooltip">Total reported cases in the current operational scope.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="open-cases">
+                        <div class="kpi-icon"><i class="fa-solid fa-hourglass-half"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">OPEN CASES</span>
+                            <h2 class="kpi-value" id="ops-kpi-open">0</h2>
+                            <p class="kpi-tooltip">Unresolved investigations requiring active policing resources.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="closed-cases">
+                        <div class="kpi-icon"><i class="fa-solid fa-check-double"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">CLOSED CASES</span>
+                            <h2 class="kpi-value" id="ops-kpi-closed">0</h2>
+                            <p class="kpi-tooltip">Completed investigations that have been formally closed.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="closure-rate">
+                        <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">CASE CLOSURE RATE</span>
+                            <h2 class="kpi-value" id="ops-kpi-closure-rate">0.0%</h2>
+                            <p class="kpi-tooltip">Ratio of resolved cases to total reported operational incidents.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="total-police">
+                        <div class="kpi-icon"><i class="fa-solid fa-users-line"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOTAL POLICE DEPLOYED</span>
+                            <h2 class="kpi-value" id="ops-kpi-total-police">0</h2>
+                            <p class="kpi-tooltip">Sum of all police forces deployed across the selected cases.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="avg-police">
+                        <div class="kpi-icon"><i class="fa-solid fa-user-shield"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">AVG POLICE PER CASE</span>
+                            <h2 class="kpi-value" id="ops-kpi-avg-police">0.0</h2>
+                            <p class="kpi-tooltip">Average number of police personnel assigned per incident.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visuals Grid -->
+                <div class="visuals-grid">
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-city"></i> Crime Count by City</h3>
+                            <span class="chart-subtitle">Top 10 cities by case count</span>
+                        </div>
+                        <div id="ops-chart-crime-city" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-users"></i> Police Force Deployment by City</h3>
+                            <span class="chart-subtitle">Average police deployed in top 10 cities</span>
+                        </div>
+                        <div id="ops-chart-deployment-city" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-user-gear"></i> Police Deployment by Crime Type</h3>
+                            <span class="chart-subtitle">Average police allocated across top 10 crime codes</span>
+                        </div>
+                        <div id="ops-chart-deployment-crime" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Case Backlog & Resolution by City</h3>
+                            <span class="chart-subtitle">Comparison of Open vs Closed case volumes across top 10 cities</span>
+                        </div>
+                        <div id="ops-chart-backlog-city" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-timeline"></i> Crime Occurrence Timeline</h3>
+                            <span class="chart-subtitle">Trends in case registration</span>
+                        </div>
+                        <div id="ops-chart-trend" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-list-check"></i> Crime Domain vs Case Resolution</h3>
+                            <span class="chart-subtitle">Backlog status across broad tactical domains</span>
+                        </div>
+                        <div id="ops-chart-domain-status" class="chart-body"></div>
+                    </div>
+                </div>
+
+                <!-- Handwritten Dynamic Insights -->
+                <div class="insights-section">
+                    <h3 class="notebook-title"><i class="fa-solid fa-pen-fancy"></i> POLICE OPERATIONAL INSIGHTS</h3>
+                    <div class="insights-container" id="ops-insights">
+                        <!-- Dynamic Insights will be injected here -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab 3: National Crime Intelligence -->
+            <section id="tab-intelligence" class="dashboard-tab hidden">
+                <div class="tab-header">
+                    <h1>NATIONAL CRIME INTELLIGENCE</h1>
+                    <p class="tab-subtitle">Exploring crime patterns, locations, weapons, demographics, and time.</p>
+                </div>
+
+                <!-- Slicers -->
+                <div class="slicers-bar">
+                    <div class="slicer-group">
+                        <label for="intel-city"><i class="fa-solid fa-city"></i> City</label>
+                        <select id="intel-city" class="custom-select">
+                            <option value="ALL">All Cities</option>
+                        </select>
+                    </div>
+                    <div class="slicer-group">
+                        <label for="intel-crime"><i class="fa-solid fa-handcuffs"></i> Crime Type</label>
+                        <select id="intel-crime" class="custom-select">
+                            <option value="ALL">All Crime Types</option>
+                        </select>
+                    </div>
+                    <button class="btn-reset" onclick="resetDashboardFilters('intelligence')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                    </button>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" data-metric="total-crimes">
+                        <div class="kpi-icon"><i class="fa-solid fa-database"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOTAL CRIMES</span>
+                            <h2 class="kpi-value" id="intel-kpi-total">0</h2>
+                            <p class="kpi-tooltip">Total reports within the analytical boundary.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="cities-count">
+                        <div class="kpi-icon"><i class="fa-solid fa-map-location"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">NUMBER OF CITIES</span>
+                            <h2 class="kpi-value" id="intel-kpi-cities">0</h2>
+                            <p class="kpi-tooltip">Count of distinct metropolitan locations in this subset.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="types-count">
+                        <div class="kpi-icon"><i class="fa-solid fa-tags"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">NUMBER OF CRIME TYPES</span>
+                            <h2 class="kpi-value" id="intel-kpi-types">0</h2>
+                            <p class="kpi-tooltip">Distinct categories of crimes registered in the dataset.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="common-crime">
+                        <div class="kpi-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">MOST COMMON CRIME</span>
+                            <h2 class="kpi-value small-text" id="intel-kpi-common-crime">N/A</h2>
+                            <p class="kpi-tooltip">The crime description appearing most frequently (statistical mode).</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="common-weapon">
+                        <div class="kpi-icon"><i class="fa-solid fa-gun"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">MOST COMMON WEAPON</span>
+                            <h2 class="kpi-value small-text" id="intel-kpi-weapon">N/A</h2>
+                            <p class="kpi-tooltip">The dominant tool/weapon used during crime commission.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="avg-age">
+                        <div class="kpi-icon"><i class="fa-solid fa-cake-candles"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">AVG VICTIM AGE</span>
+                            <h2 class="kpi-value" id="intel-kpi-avg-age">0.0</h2>
+                            <p class="kpi-tooltip">Arithmetic mean of victim ages in reports.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visuals Grid -->
+                <div class="visuals-grid">
+                    <!-- Heatmap / Matrix layout -->
+                    <div class="chart-container large-chart span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-border-all"></i> Crime Concentration by City & Crime Type</h3>
+                            <span class="chart-subtitle">Cross-tabulation of incidents (top cities vs top crime codes)</span>
+                        </div>
+                        <div class="matrix-scroll-container">
+                            <table id="intel-matrix-heatmap" class="heatmap-matrix">
+                                <!-- Generated Dynamically -->
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-bar"></i> Crime Type Distribution</h3>
+                            <span class="chart-subtitle">Comparative frequency of top crime categories</span>
+                        </div>
+                        <div id="intel-chart-crime-dist" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-circle-nodes"></i> Weapons Involved by Crime Domain</h3>
+                            <span class="chart-subtitle">Distribution of weapons across operational domains</span>
+                        </div>
+                        <div id="intel-chart-weapon-crime" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-clock"></i> Crime Frequency by Time of Day</h3>
+                            <span class="chart-subtitle">Incidents grouped by hourly operational intervals</span>
+                        </div>
+                        <div id="intel-chart-time-day" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-layer-group"></i> Crime Domain Composition by City</h3>
+                            <span class="chart-subtitle">Breakdown of domain share in top 10 cities</span>
+                        </div>
+                        <div id="intel-chart-domain-city" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> Victim Age Distribution</h3>
+                            <span class="chart-subtitle">Aggregate demographics mapped to analytical groups</span>
+                        </div>
+                        <div id="intel-chart-age-dist" class="chart-body"></div>
+                    </div>
+                </div>
+
+                <!-- Handwritten Dynamic Insights -->
+                <div class="insights-section">
+                    <h3 class="notebook-title"><i class="fa-solid fa-pen-fancy"></i> CRIME INTELLIGENCE INSIGHTS</h3>
+                    <div class="insights-container" id="intel-insights">
+                        <!-- Dynamic Insights will be injected here -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab 4: Women's Safety & Victim Analysis -->
+            <section id="tab-safety" class="dashboard-tab hidden">
+                <div class="tab-header">
+                    <h1>WOMEN'S SAFETY & VICTIM ANALYSIS</h1>
+                    <p class="tab-subtitle">Understanding reported incidents involving female victims and victim demographics.</p>
+                    <div class="disclaimer-badge">
+                        <i class="fa-solid fa-circle-info"></i> Note: This view focuses on reported incidents involving female victims and does not claim to represent all crimes against women nationally.
+                    </div>
+                </div>
+
+                <!-- Slicers -->
+                <div class="slicers-bar">
+                    <div class="slicer-group">
+                        <label for="safety-city"><i class="fa-solid fa-city"></i> City</label>
+                        <select id="safety-city" class="custom-select">
+                            <option value="ALL">All Cities</option>
+                        </select>
+                    </div>
+                    <div class="slicer-group">
+                        <label for="safety-crime"><i class="fa-solid fa-handcuffs"></i> Crime Type</label>
+                        <select id="safety-crime" class="custom-select">
+                            <option value="ALL">All Crime Types</option>
+                        </select>
+                    </div>
+                    <button class="btn-reset" onclick="resetDashboardFilters('safety')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                    </button>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" data-metric="female-cases">
+                        <div class="kpi-icon"><i class="fa-solid fa-person-dress"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">FEMALE VICTIM CASES</span>
+                            <h2 class="kpi-value" id="safety-kpi-cases">0</h2>
+                            <p class="kpi-tooltip">Reported incidents involving female victims in the active slice.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="female-percent">
+                        <div class="kpi-icon"><i class="fa-solid fa-venus"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">FEMALE VICTIM %</span>
+                            <h2 class="kpi-value" id="safety-kpi-percent">0.0%</h2>
+                            <p class="kpi-tooltip">Proportion of female victims to total victims in this selection.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="female-violent">
+                        <div class="kpi-icon"><i class="fa-solid fa-skull"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">FEMALE VIOLENT CASES</span>
+                            <h2 class="kpi-value" id="safety-kpi-violent">0</h2>
+                            <p class="kpi-tooltip">Violent crimes registered with female victims.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="female-open">
+                        <div class="kpi-icon"><i class="fa-solid fa-lock-open"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">FEMALE OPEN CASES</span>
+                            <h2 class="kpi-value" id="safety-kpi-open">0</h2>
+                            <p class="kpi-tooltip">Total unresolved incidents involving female victims.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="female-common-crime">
+                        <div class="kpi-icon"><i class="fa-solid fa-magnifying-glass"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">MOST COMMON CRIME (FEMALE)</span>
+                            <h2 class="kpi-value small-text" id="safety-kpi-common-crime">N/A</h2>
+                            <p class="kpi-tooltip">The specific crime category registered most frequently against female victims.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="female-top-city">
+                        <div class="kpi-icon"><i class="fa-solid fa-map-pin"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOP FEMALE VICTIM CITY</span>
+                            <h2 class="kpi-value small-text" id="safety-kpi-top-city">N/A</h2>
+                            <p class="kpi-tooltip">The city with the highest volume of female victim cases in the current filter.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visuals Grid -->
+                <div class="visuals-grid">
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-city"></i> Female Victim Cases by City</h3>
+                            <span class="chart-subtitle">Geographic distribution of reported cases (top 10 cities)</span>
+                        </div>
+                        <div id="safety-chart-city" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-person-breastfeeding"></i> Age Distribution of Female Victims</h3>
+                            <span class="chart-subtitle">Cases indexed across age groups</span>
+                        </div>
+                        <div id="safety-chart-age" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-list-ol"></i> Common Crime Types Involving Female Victims</h3>
+                            <span class="chart-subtitle">Top 10 crime codes where victims are registered as female</span>
+                        </div>
+                        <div id="safety-chart-crime" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-venus-mars"></i> General Crime Distribution by Victim Gender</h3>
+                            <span class="chart-subtitle">Comparison of gender frequencies across top crime types</span>
+                        </div>
+                        <div id="safety-chart-gender" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-bezier-curve"></i> Crime Domain Share for Female Victims</h3>
+                            <span class="chart-subtitle">Proportion of domain registrations</span>
+                        </div>
+                        <div id="safety-chart-domain" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-lock"></i> Resolution of Female Victim Cases</h3>
+                            <span class="chart-subtitle">100% stacked bar chart showing Open vs Closed ratios by domain</span>
+                        </div>
+                        <div id="safety-chart-resolution" class="chart-body"></div>
+                    </div>
+                </div>
+
+                <!-- Handwritten Dynamic Insights -->
+                <div class="insights-section">
+                    <h3 class="notebook-title"><i class="fa-solid fa-pen-fancy"></i> WOMEN'S SAFETY INSIGHTS</h3>
+                    <div class="insights-container" id="safety-insights">
+                        <!-- Dynamic Insights will be injected here -->
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Tab 5: City Crime & Risk Profile -->
+            <section id="tab-cityrisk" class="dashboard-tab hidden">
+                <div class="tab-header">
+                    <h1>CITY CRIME & RISK PROFILE</h1>
+                    <p class="tab-subtitle">Comparing crime volume, crime composition, and case outcomes across cities.</p>
+                </div>
+
+                <!-- Slicers -->
+                <div class="slicers-bar">
+                    <div class="slicer-group">
+                        <label for="risk-city"><i class="fa-solid fa-city"></i> City Context</label>
+                        <select id="risk-city" class="custom-select">
+                            <option value="ALL">All Cities</option>
+                        </select>
+                    </div>
+                    <div class="slicer-group">
+                        <label for="risk-domain"><i class="fa-solid fa-layer-group"></i> Crime Domain</label>
+                        <select id="risk-domain" class="custom-select">
+                            <option value="ALL">All Domains</option>
+                        </select>
+                    </div>
+                    <button class="btn-reset" onclick="resetDashboardFilters('cityrisk')">
+                        <i class="fa-solid fa-rotate-left"></i> Reset Filters
+                    </button>
+                </div>
+
+                <!-- KPI Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card" data-metric="total-crimes">
+                        <div class="kpi-icon"><i class="fa-solid fa-magnifying-glass-location"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">TOTAL CRIMES (SELECTED CITY)</span>
+                            <h2 class="kpi-value" id="risk-kpi-total">0</h2>
+                            <p class="kpi-tooltip">Total registered offenses in the selected cities context.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="violent-crimes">
+                        <div class="kpi-icon"><i class="fa-solid fa-circle-exclamation"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">VIOLENT CRIMES</span>
+                            <h2 class="kpi-value" id="risk-kpi-violent">0</h2>
+                            <p class="kpi-tooltip">Incidents categorized as violent in the active context.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="violent-rate">
+                        <div class="kpi-icon"><i class="fa-solid fa-scale-unbalanced"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">VIOLENT CRIME %</span>
+                            <h2 class="kpi-value" id="risk-kpi-violent-percent">0.0%</h2>
+                            <p class="kpi-tooltip">Percentage of total city incidents categorized under violent crime.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="open-cases">
+                        <div class="kpi-icon"><i class="fa-solid fa-inbox"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">OPEN CASES</span>
+                            <h2 class="kpi-value" id="risk-kpi-open">0</h2>
+                            <p class="kpi-tooltip">Total unresolved backlogged investigations in this city context.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="closure-rate">
+                        <div class="kpi-icon"><i class="fa-solid fa-percent"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">CLOSURE RATE %</span>
+                            <h2 class="kpi-value" id="risk-kpi-closure">0.0%</h2>
+                            <p class="kpi-tooltip">Proportion of closed investigations to total city caseload.</p>
+                        </div>
+                    </div>
+                    <div class="kpi-card" data-metric="common-crime">
+                        <div class="kpi-icon"><i class="fa-solid fa-building-circle-exclamation"></i></div>
+                        <div class="kpi-info">
+                            <span class="kpi-label">MOST COMMON CRIME</span>
+                            <h2 class="kpi-value small-text" id="risk-kpi-common-crime">N/A</h2>
+                            <p class="kpi-tooltip">The highest frequency offense recorded in the selected city context.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Visuals Grid -->
+                <div class="visuals-grid">
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-ranking-star"></i> City Crime Volume Rankings</h3>
+                            <span class="chart-subtitle">Aggregate crime counts compared across top 10 cities</span>
+                        </div>
+                        <div id="risk-chart-rank" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-column"></i> City × Crime Domain Composition</h3>
+                            <span class="chart-subtitle">Crime domain share comparisons in top 10 cities</span>
+                        </div>
+                        <div id="risk-chart-domain" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-toggle-off"></i> City × Case Resolution Status</h3>
+                            <span class="chart-subtitle">caseload resolution rates in top 10 cities</span>
+                        </div>
+                        <div id="risk-chart-status" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container span-two-cols">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-circle-info"></i> Top Crime Types in Selected Context</h3>
+                            <span class="chart-subtitle">Top 10 crime codes for the active city context</span>
+                        </div>
+                        <div id="risk-chart-top-crimes" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-venus-mars"></i> Victim Demographics by City</h3>
+                            <span class="chart-subtitle">Victim gender comparison across top 10 cities</span>
+                        </div>
+                        <div id="risk-chart-demographics" class="chart-body"></div>
+                    </div>
+
+                    <div class="chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-line"></i> City Crime Trend Timeline</h3>
+                            <span class="chart-subtitle">Monthly aggregate trend in the selected city context</span>
+                        </div>
+                        <div id="risk-chart-trend" class="chart-body"></div>
+                    </div>
+                </div>
+
+                <!-- Handwritten Dynamic Insights -->
+                <div class="insights-section">
+                    <h3 class="notebook-title"><i class="fa-solid fa-pen-fancy"></i> CITY CRIME & RISK INSIGHTS</h3>
+                    <div class="insights-container" id="risk-insights">
+                        <!-- Dynamic Insights will be injected here -->
+                    </div>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- Global Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <h3>INDIAN CRIME INTELLIGENCE & PUBLIC SAFETY ANALYTICS</h3>
+                <p class="footer-sub">Interactive analytical exploration of reported crime data across cities and demographics.</p>
+                <div class="footer-divider"></div>
+                <p class="footer-portfolio">Built as a Data Analytics Portfolio Project | Single-Page Client-Side Application</p>
+                <p class="footer-copyright">&copy; 2026 ICIPS Analytics Team. All rights reserved.</p>
+            </div>
+        </footer>
+
+    </div>
+
+    <!-- Embedded Crime Dataset (Zero Server, Zero CORS, Instant Local Load) -->
+    <script src="crime_dataset.js"></script>
+    <!-- Main JavaScript Logic -->
+    <script src="script.js"></script>
+</body>
+</html>
